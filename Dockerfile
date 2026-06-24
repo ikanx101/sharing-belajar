@@ -1,7 +1,6 @@
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/templates/default.conf.template
-COPY . /usr/share/nginx/html
-RUN rm -f /usr/share/nginx/html/nginx.conf \
-          /usr/share/nginx/html/Dockerfile \
-          /usr/share/nginx/html/readme.md
+COPY quarto-presentation.html /usr/share/nginx/html/quarto-presentation.html
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 EXPOSE 8080
+CMD ["/start.sh"]
