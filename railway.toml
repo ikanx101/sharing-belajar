@@ -1,0 +1,5 @@
+[deploy]
+healthcheckPath = "/quarto-presentation.html"
+
+[variables]
+PORT = "8080"
