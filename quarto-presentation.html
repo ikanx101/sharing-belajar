@@ -1,0 +1,1004 @@
+<title>Reproducible Reporting Using Quarto in RStudio</title>
+<style>
+:root {
+  --navy:  #0b1d35;
+  --ink:   #0f2744;
+  --surf:  #142e52;
+  --rim:   #1d4272;
+  --sky:   #4db6ff;
+  --sun:   #f5c842;
+  --mist:  #c8dff5;
+  --fog:   #7ba5cc;
+  --code:  #060f1a;
+  --grn:   #52e09c;
+  --red:   #ff6b6b;
+  --font:  -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  --mono:  'SF Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--navy);
+  font-family: var(--font);
+  color: var(--mist);
+  -webkit-text-size-adjust: none;
+  font-size: 118%;
+}
+
+/* ── FRAME ─────────────────────────── */
+#app { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+#prog {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: rgba(77,182,255,.12); z-index: 200;
+}
+#prog-fill {
+  height: 100%; background: var(--sky);
+  transition: width .4s ease;
+  box-shadow: 0 0 8px rgba(77,182,255,.55);
+}
+
+#nav {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  background: rgba(11,29,53,.9);
+  border: 1px solid rgba(77,182,255,.18);
+  border-radius: 100px; padding: 7px 16px;
+  display: flex; align-items: center; gap: 16px;
+  z-index: 200;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  user-select: none;
+}
+.nb {
+  background: none; border: none; color: var(--fog);
+  font-size: 1.05rem; cursor: pointer;
+  padding: 5px 10px; border-radius: 6px;
+  transition: color .18s, background .18s;
+  touch-action: manipulation;
+  min-width: 44px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nb:hover { color: var(--mist); background: rgba(77,182,255,.1); }
+.nb:active { background: rgba(77,182,255,.2); }
+.nb:disabled { opacity: .22; cursor: default; }
+#ctr {
+  font-size: .76rem; font-weight: 800; color: var(--fog);
+  min-width: 52px; text-align: center; letter-spacing: .5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── SLIDES ─────────────────────────── */
+.slide {
+  position: absolute; inset: 0;
+  padding: 50px 58px 58px;
+  display: flex; flex-direction: column;
+  background: var(--navy);
+  opacity: 0; pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity .32s ease, transform .32s ease;
+  overflow: hidden;
+}
+.slide.on { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* Cover */
+.s-cover {
+  justify-content: flex-end;
+}
+.s-cover::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(77,182,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(77,182,255,.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+.s-cover::after {
+  content: '';
+  position: absolute; top: -15%; right: -10%;
+  width: 70%; height: 110%;
+  background: radial-gradient(ellipse at top right, rgba(77,182,255,.11) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Question */
+.s-q {
+  align-items: center; justify-content: center; text-align: center;
+  background: linear-gradient(165deg, var(--navy) 0%, #0c2245 100%);
+}
+
+/* Section break */
+.s-sec {
+  align-items: center; justify-content: center; text-align: center;
+  background: var(--surf);
+}
+.s-sec::before {
+  content: attr(data-n);
+  position: absolute;
+  font-size: 21rem; font-weight: 900;
+  color: rgba(77,182,255,.05); line-height: 1;
+  right: -20px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── TYPE ───────────────────────────── */
+.eyebrow {
+  font-size: .7rem; font-weight: 800;
+  letter-spacing: 3.5px; text-transform: uppercase;
+  color: var(--sky); margin-bottom: 16px;
+}
+.c-title {
+  font-size: 2.8rem; font-weight: 900; line-height: 1.13;
+  color: var(--mist); margin-bottom: 28px;
+  position: relative; z-index: 1; text-wrap: balance;
+}
+.c-title mark { background: none; color: var(--sky); }
+.c-name { font-size: 1.12rem; font-weight: 800; color: var(--mist); position: relative; z-index: 1; }
+.c-role { font-size: .86rem; font-weight: 600; color: var(--fog); margin-top: 4px; position: relative; z-index: 1; }
+.c-blog {
+  font-size: .82rem; font-weight: 700; color: var(--sky);
+  text-decoration: none; margin-top: 5px; display: inline-block;
+  border-bottom: 1px solid rgba(77,182,255,.3); padding-bottom: 1px;
+  position: relative; z-index: 1;
+}
+.c-badge {
+  position: absolute; top: 42px; right: 58px;
+  background: rgba(77,182,255,.1); border: 1px solid rgba(77,182,255,.22);
+  border-radius: 100px; padding: 5px 15px;
+  font-size: .68rem; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--sky); z-index: 1;
+}
+.q-ico { font-size: 3.2rem; margin-bottom: 26px; display: block; }
+.q-txt {
+  font-size: 2.2rem; font-weight: 900; line-height: 1.27;
+  color: var(--mist); max-width: 800px; text-wrap: balance;
+}
+.q-txt em { color: var(--sun); font-style: normal; }
+
+.sec-ey {
+  font-size: .7rem; font-weight: 800;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--sky); margin-bottom: 12px; position: relative; z-index: 1;
+}
+.sec-ti {
+  font-size: 3.3rem; font-weight: 900;
+  color: var(--mist); position: relative; z-index: 1;
+}
+.sec-ds {
+  font-size: .98rem; font-weight: 600; color: var(--fog);
+  margin-top: 12px; position: relative; z-index: 1;
+}
+
+.h1 {
+  font-size: 1.72rem; font-weight: 900; color: var(--mist);
+  margin-bottom: 24px; padding-bottom: 13px;
+  border-bottom: 1px solid var(--rim); flex-shrink: 0;
+}
+.h1 em { color: var(--sky); font-style: normal; }
+
+/* ── LAYOUT ─────────────────────────── */
+.two  { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; flex: 1; min-height: 0; }
+.three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.stk  { display: flex; flex-direction: column; gap: 13px; }
+
+/* ── CARD ───────────────────────────── */
+.card {
+  background: var(--surf); border: 1px solid var(--rim);
+  border-radius: 8px; padding: 14px 17px;
+}
+.cl {
+  font-size: .67rem; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--sky); margin-bottom: 7px;
+}
+.cb {
+  font-size: .87rem; font-weight: 600;
+  color: var(--fog); line-height: 1.55;
+}
+.cb strong { color: var(--mist); }
+.cb em     { color: var(--sky); font-style: normal; }
+
+/* ── CALLOUT ────────────────────────── */
+.co {
+  border-left: 3px solid var(--sky);
+  background: rgba(77,182,255,.07);
+  border-radius: 0 7px 7px 0;
+  padding: 12px 15px;
+  font-size: .93rem; font-weight: 700;
+  color: var(--mist); line-height: 1.5;
+}
+.co.gold  { border-color: var(--sun);  background: rgba(245,200,66,.07); }
+.co.grn   { border-color: var(--grn);  background: rgba(82,224,156,.07); }
+
+/* ── CHECKLIST ──────────────────────── */
+.cl-list { display: flex; flex-direction: column; gap: 11px; list-style: none; }
+.cl-list li {
+  display: flex; gap: 11px; align-items: flex-start;
+  font-size: .93rem; font-weight: 600; line-height: 1.45; color: var(--mist);
+}
+.cl-list .dot {
+  flex-shrink: 0; margin-top: 2px;
+  width: 19px; height: 19px; border-radius: 4px;
+  background: rgba(77,182,255,.1); border: 1px solid rgba(77,182,255,.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .68rem;
+}
+.cl-list li strong { color: var(--sky); }
+.cl-list li em     { color: var(--sun); font-style: normal; }
+
+/* ── TIMELINE ───────────────────────── */
+.tl { display: flex; flex-direction: column; gap: 14px; }
+.tr { display: flex; gap: 14px; align-items: flex-start; }
+.ty {
+  flex-shrink: 0; width: 62px; padding: 3px 0;
+  text-align: center; background: var(--sky); color: var(--navy);
+  border-radius: 5px; font-size: .73rem; font-weight: 900; letter-spacing: .5px;
+}
+.ty.g { background: var(--sun); }
+.tt {
+  font-size: .88rem; font-weight: 600;
+  color: var(--mist); line-height: 1.5; padding-top: 2px;
+}
+.tt strong { color: var(--sky); }
+
+/* ── BADGE ──────────────────────────── */
+.bdg {
+  display: inline-block;
+  background: rgba(77,182,255,.1); border: 1px solid rgba(77,182,255,.22);
+  border-radius: 4px; padding: 1px 7px;
+  font-size: .7rem; font-weight: 800;
+  color: var(--sky); letter-spacing: .5px; text-transform: uppercase; margin: 1px;
+}
+.bdg.g { background: rgba(82,224,156,.1); border-color: rgba(82,224,156,.22); color: var(--grn); }
+
+/* ── CODE BLOCK ─────────────────────── */
+.cob {
+  background: var(--code); border: 1px solid var(--rim);
+  border-radius: 8px; padding: 16px 18px;
+  font-family: var(--mono); font-size: .79rem; line-height: 1.76;
+  color: #c8d4e6; overflow-x: auto; position: relative;
+  flex: 1; min-height: 0;
+  white-space: pre;
+}
+.cobl {
+  position: absolute; top: 9px; right: 11px;
+  font-size: .6rem; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--rim); font-family: var(--font);
+}
+.ck { color: #f5a623; font-weight: 700; }
+.cs { color: #a8e6a3; }
+.cc { color: #3a586e; font-style: italic; }
+.cn { color: #c9a9ff; }
+.cf { color: #7dd8e8; }
+.ct { color: #f9a; }
+
+/* ── INLINE CODE ────────────────────── */
+code {
+  font-family: var(--mono); font-size: .82em;
+  background: rgba(6,15,26,.85); border: 1px solid var(--rim);
+  border-radius: 3px; padding: 0 5px; color: #f5a623;
+}
+
+/* ── FILE TREE ──────────────────────── */
+.ftree {
+  font-family: var(--mono); font-size: .8rem; line-height: 1.9;
+  color: var(--fog); background: var(--code);
+  border: 1px solid var(--rim); border-radius: 8px; padding: 13px 16px;
+  white-space: pre;
+}
+.ftree .fd { color: var(--sky); font-weight: 700; }
+.ftree .fs { color: var(--sun); }
+
+/* ── COMPARISON TABLE ───────────────── */
+.ctbl { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.ctbl th {
+  background: var(--surf); color: var(--sky);
+  font-weight: 800; font-size: .68rem;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  padding: 9px 13px; text-align: left;
+  border-bottom: 2px solid var(--rim);
+}
+.ctbl td {
+  padding: 8px 13px;
+  border-bottom: 1px solid rgba(29,66,114,.38);
+  font-weight: 600; color: var(--mist); vertical-align: middle;
+}
+.ctbl tr:last-child td { border-bottom: none; }
+.yes { color: var(--grn); font-size: 1rem; }
+.no  { color: var(--red); font-size: 1rem; }
+.pt  { color: var(--sun); font-size: 1rem; }
+
+/* ── CLOSING ────────────────────────── */
+.cls-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+.cls-card {
+  background: var(--surf); border: 1px solid var(--rim);
+  border-radius: 8px; padding: 16px; text-align: center;
+}
+.cls-card .ico { font-size: 1.5rem; display: block; margin-bottom: 7px; }
+.cls-card .lbl {
+  font-size: .65rem; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--sky); margin-bottom: 5px;
+}
+.cls-card .url { font-size: .76rem; font-weight: 600; color: var(--fog); }
+
+.slide-note {
+  margin-top: auto; flex-shrink: 0;
+  font-size: .7rem; font-weight: 700;
+  color: rgba(123,165,204,.45); padding-top: 10px;
+}
+</style>
+
+<div id="app">
+  <div id="prog"><div id="prog-fill"></div></div>
+
+  <!-- 0 · COVER -->
+  <section class="slide s-cover on">
+    <div class="c-badge">Belajar R Programming</div>
+    <div style="position:relative;z-index:1;">
+      <div class="eyebrow">Materi Komunitas · 5 Juli 2026</div>
+      <div class="c-title">Reproducible Reporting<br>Using <mark>Quarto</mark><br>in RStudio</div>
+      <div class="c-name">Ikang Fadhli</div>
+      <div class="c-role">Market Researcher &amp; Blogger</div>
+      <a class="c-blog" href="https://ikanx101.com" target="_blank">ikanx101.com</a>
+    </div>
+  </section>
+
+  <!-- 1 · Q: REPORT -->
+  <section class="slide s-q">
+    <span class="q-ico">🙋</span>
+    <div class="q-txt">Siapa dari rekan-rekan di sini yang<br><em>kerjanya membuat report?</em></div>
+  </section>
+
+  <!-- 2 · Q: BLOG/WEB -->
+  <section class="slide s-q">
+    <span class="q-ico">✍️</span>
+    <div class="q-txt">Siapa yang hobinya menulis <em>blog,<br>artikel, jurnal penelitian,</em> atau <em>membuat website?</em></div>
+  </section>
+
+  <!-- 3 · Q: DASHBOARD -->
+  <section class="slide s-q">
+    <span class="q-ico">📊</span>
+    <div class="q-txt">Siapa yang kerjanya membuat<br><em>dashboard Shiny di R?</em></div>
+  </section>
+
+  <!-- 4 · HOOK -->
+  <section class="slide">
+    <div class="h1" style="margin-bottom:6px;">Kabar baik buat kalian semua! 🎉</div>
+    <div style="font-size:.97rem;font-weight:700;color:var(--fog);margin-bottom:14px;">R + RStudio bisa mengerjakan <strong style="color:var(--sun)">SEMUA</strong> itu — dalam satu tools yang sama</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex:1;margin-bottom:12px;">
+      <div style="background:rgba(77,182,255,.07);border:1px solid rgba(77,182,255,.2);border-top:3px solid var(--sky);border-radius:8px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:2.7rem;margin-bottom:11px;line-height:1;">📄</div>
+        <div style="font-size:1.05rem;font-weight:900;color:var(--mist);margin-bottom:7px;">Report</div>
+        <div style="font-size:.84rem;font-weight:600;color:var(--fog);line-height:1.55;">PDF, Word, HTML — otomatis dari data terbaru, tanpa copy-paste manual</div>
+      </div>
+      <div style="background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.2);border-top:3px solid var(--sun);border-radius:8px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:2.7rem;margin-bottom:11px;line-height:1;">🌐</div>
+        <div style="font-size:1.05rem;font-weight:900;color:var(--mist);margin-bottom:7px;">Website &amp; Blog</div>
+        <div style="font-size:.84rem;font-weight:600;color:var(--fog);line-height:1.55;">Publish artikel dan analisis ke internet langsung dari RStudio</div>
+      </div>
+      <div style="background:rgba(82,224,156,.07);border:1px solid rgba(82,224,156,.2);border-top:3px solid var(--grn);border-radius:8px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:2.7rem;margin-bottom:11px;line-height:1;">📊</div>
+        <div style="font-size:1.05rem;font-weight:900;color:var(--mist);margin-bottom:7px;">Dashboard</div>
+        <div style="font-size:.84rem;font-weight:600;color:var(--fog);line-height:1.55;">Visualisasi interaktif dengan Shiny atau Observable JS</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;">
+      <div style="background:rgba(201,169,255,.07);border:1px solid rgba(201,169,255,.2);border-top:3px solid #c9a9ff;border-radius:8px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:2.7rem;margin-bottom:11px;line-height:1;">📽️</div>
+        <div style="font-size:1.05rem;font-weight:900;color:var(--mist);margin-bottom:7px;">Presentasi</div>
+        <div style="font-size:.84rem;font-weight:600;color:var(--fog);line-height:1.55;">Slide deck modern dari kode R — seperti yang sedang kamu lihat ini!</div>
+      </div>
+      <div style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-top:3px solid #f5a623;border-radius:8px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:2.7rem;margin-bottom:11px;line-height:1;">📚</div>
+        <div style="font-size:1.05rem;font-weight:900;color:var(--mist);margin-bottom:7px;">Buku</div>
+        <div style="font-size:.84rem;font-weight:600;color:var(--fog);line-height:1.55;">Multi-chapter, export ke PDF + EPUB sekaligus dalam satu project</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · REPRODUCIBLE REPORTING -->
+  <section class="slide">
+    <div class="h1"><em>Reproducible Reporting</em> — Kenapa Harus Coding?</div>
+    <div class="co gold" style="margin-bottom:14px;">
+      🍳 <strong>Analogi:</strong> Kode adalah <em style="color:var(--sun)">resep masak</em>. Bahan-bahan (data) boleh berganti setiap bulan, tapi proses dan hasilnya selalu konsisten — dan siapapun bisa mereplikasi laporan yang sama hanya dengan menjalankan kodenya. <strong style="color:var(--sun)">Tanpa resep, kamu memasak dari nol setiap hari.</strong>
+    </div>
+    <div class="two">
+      <div style="background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.2);border-top:3px solid var(--red);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">📋 Cara Biasa — MS Office</div>
+        <ul class="cl-list">
+          <li><div class="dot" style="background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:var(--red);">✗</div><div>Copy-paste data baru ke Excel <strong>setiap periode</strong></div></li>
+          <li><div class="dot" style="background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:var(--red);">✗</div><div>Update chart dan tabel <strong>satu per satu secara manual</strong></div></li>
+          <li><div class="dot" style="background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:var(--red);">✗</div><div>Angka di narasi bisa <strong>tidak sinkron</strong> dengan tabel</div></li>
+          <li><div class="dot" style="background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:var(--red);">✗</div><div>Data berubah? <strong>Ulang semua langkah dari awal</strong></div></li>
+          <li><div class="dot" style="background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:var(--red);">✗</div><div>Orang lain tidak bisa verifikasi <strong>tanpa bantuanmu</strong></div></li>
+        </ul>
+      </div>
+      <div style="background:rgba(82,224,156,.06);border:1px solid rgba(82,224,156,.2);border-top:3px solid var(--grn);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--grn);margin-bottom:2px;">⚡ Cara Coding — Quarto + R</div>
+        <ul class="cl-list">
+          <li><div class="dot" style="background:rgba(82,224,156,.15);border-color:rgba(82,224,156,.3);color:var(--grn);">✓</div><div>Update data → <strong>semua output refresh otomatis</strong></div></li>
+          <li><div class="dot" style="background:rgba(82,224,156,.15);border-color:rgba(82,224,156,.3);color:var(--grn);">✓</div><div>Tidak ada copy-paste = <strong>tidak ada human error</strong></div></li>
+          <li><div class="dot" style="background:rgba(82,224,156,.15);border-color:rgba(82,224,156,.3);color:var(--grn);">✓</div><div>Satu template untuk <strong>puluhan laporan berbeda</strong> sekaligus</div></li>
+          <li><div class="dot" style="background:rgba(82,224,156,.15);border-color:rgba(82,224,156,.3);color:var(--grn);">✓</div><div>Siapapun bisa <strong>menjalankan ulang dan memverifikasi</strong></div></li>
+          <li><div class="dot" style="background:rgba(82,224,156,.15);border-color:rgba(82,224,156,.3);color:var(--grn);">✓</div><div>Riwayat perubahan <strong>terlacak otomatis via git</strong></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · RMARKDOWN -->
+  <section class="slide">
+    <div class="h1">Sejarah: <em>R Markdown</em></div>
+    <div class="two">
+      <div class="tl">
+        <div class="tr"><div class="ty">2012</div><div class="tt">Package <strong>knitr</strong> lahir — dibuat oleh <strong>Yihui Xie</strong> dari RStudio. Fondasi ekosistem.</div></div>
+        <div class="tr"><div class="ty">2014</div><div class="tt">Package <strong>rmarkdown</strong> dirilis resmi — knitr + pandoc dalam satu workflow</div></div>
+        <div class="tr"><div class="ty">2016+</div><div class="tt">Ekosistem meluas: <strong>bookdown</strong>, <strong>blogdown</strong>, <strong>flexdashboard</strong></div></div>
+      </div>
+      <div class="stk">
+        <div class="co">Menggabungkan <strong>teks Markdown</strong> + <strong>kode R</strong> + <strong>output</strong> menjadi satu dokumen yang <em>reproducible</em></div>
+        <div class="card">
+          <div class="cl">Tim Pengembang</div>
+          <div class="cb"><strong>Yihui Xie</strong> — penulis utama knitr &amp; rmarkdown<br><strong>JJ Allaire</strong> — co-author, CEO RStudio<br><strong>Garrett Grolemund</strong> — kontributor &amp; edukator</div>
+        </div>
+        <div class="card">
+          <div class="cl">Format Output</div>
+          <div class="cb"><span class="bdg">HTML</span><span class="bdg">PDF</span><span class="bdg">Word</span><span class="bdg">Beamer</span><span class="bdg">ioslides</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · XARINGAN -->
+  <section class="slide">
+    <div class="h1">Sejarah: <em>xaringan</em></div>
+    <div class="two">
+      <div class="tl">
+        <div class="tr"><div class="ty">2016</div><div class="tt">Package <strong>xaringan</strong> dirilis oleh <strong>Yihui Xie</strong>, berbasis remark.js</div></div>
+        <div class="tr"><div class="ty">2019</div><div class="tt"><strong>xaringanExtra</strong> &amp; <strong>xaringanthemer</strong> lahir dari komunitas R</div></div>
+        <div class="tr"><div class="ty g">Kini</div><div class="tt">Masih aktif digunakan, terutama di komunitas R dan akademisi</div></div>
+      </div>
+      <div class="stk">
+        <div class="co gold">Nama <em style="color:var(--sun)">"xaringan"</em> terinspirasi dari <em style="color:var(--sun)">Sharingan</em> — teknik mata sakti di anime <strong style="color:var(--sun)">Naruto!</strong> 👁️</div>
+        <div class="card">
+          <div class="cl">Apa itu xaringan?</div>
+          <div class="cb">Package R untuk membuat presentasi menggunakan <strong>remark.js</strong>. Output-nya adalah slide HTML interaktif yang bisa dibuka di browser.</div>
+        </div>
+        <div class="card">
+          <div class="cl">Kelebihan</div>
+          <div class="cb">Infinite canvas &bull; Custom CSS bebas &bull; Live reload &bull; Komunitas template yang kaya</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · QUARTO INTRO -->
+  <section class="slide">
+    <div class="h1"><em>Quarto</em> — Generasi Berikutnya</div>
+    <div class="two">
+      <div class="stk">
+        <div class="tr" style="display:flex;gap:14px;align-items:flex-start;">
+          <div class="ty">2022</div>
+          <div class="tt">Quarto <strong>v1.0</strong> dirilis resmi oleh <strong>Posit</strong> (nama baru RStudio)</div>
+        </div>
+        <div class="card">
+          <div class="cl">Tim Pengembang</div>
+          <div class="cb"><strong>JJ Allaire</strong> — CEO Posit, inisiator<br><strong>Charles Teague</strong> — lead engineer<br><strong>Christophe Dervieux</strong> — senior engineer</div>
+        </div>
+        <div class="co grn">Multi-bahasa: <span class="bdg g">R</span><span class="bdg g">Python</span><span class="bdg g">Julia</span><span class="bdg g">Observable JS</span></div>
+      </div>
+      <div class="stk">
+        <div class="card"><div class="cl">vs R Markdown</div><div class="cb">Tidak bergantung pada R; satu sistem untuk semua bahasa; CLI mandiri; YAML lebih konsisten</div></div>
+        <div class="card"><div class="cl">vs xaringan</div><div class="cb">Menggunakan <strong>RevealJS</strong> yang lebih modern; fitur built-in lebih lengkap; integrasi kode lebih smooth</div></div>
+        <div class="card"><div class="cl">Unified Publishing</div><div class="cb">Satu tool untuk <em>dokumen, presentasi, web, blog, dashboard,</em> dan <em>buku</em></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · INSTALASI -->
+  <section class="slide">
+    <div class="h1">Cara Instalasi <em>Quarto</em></div>
+    <div class="two">
+      <div class="stk">
+        <div class="card"><div class="cl">Langkah 1 — Download</div><div class="cb">Kunjungi <strong>quarto.org</strong> → klik Download → pilih installer sesuai OS (Windows / macOS / Linux)</div></div>
+        <div class="card"><div class="cl">Langkah 2 — RStudio</div><div class="cb">Quarto sudah <em>bundled</em> di RStudio versi 2022.07 ke atas. Update RStudio ke versi terbaru!</div></div>
+        <div class="card"><div class="cl">Langkah 3 — R Package</div><div class="cb">Install package <code>quarto</code> di R untuk fitur render programatik dari dalam skrip R</div></div>
+      </div>
+      <div class="stk">
+        <div class="cob"><div class="cobl">R + Terminal</div><span class="cc"># Install package quarto di R</span>
+<span class="cf">install.packages</span>(<span class="cs">"quarto"</span>)
+
+<span class="cc"># Cek versi Quarto di terminal</span>
+quarto <span class="ck">--version</span>
+
+<span class="cc"># Cek semua dependensi siap</span>
+quarto <span class="cf">check</span></div>
+        <div class="co gold">💡 Jalankan <code>quarto check</code> di terminal — pastikan semua item menunjukkan tanda ✓ sebelum mulai kerja</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · SEC: DOCUMENT -->
+  <section class="slide s-sec" data-n="01">
+    <div class="sec-ey">Quarto · 01</div>
+    <div class="sec-ti">Document</div>
+    <div class="sec-ds">Laporan otomatis langsung dari data nyata</div>
+  </section>
+
+  <!-- 10 · DOCUMENT: APA ITU -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Document</em> — Apa itu?</div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Dokumen yang menggabungkan <strong>narasi teks</strong>, <strong>kode</strong>, dan <strong>output</strong> dalam satu file <code>.qmd</code> — render ulang kapanpun data berubah</div>
+        <ul class="cl-list">
+          <li><div class="dot">✓</div><div>Render ulang → dokumen langsung update tanpa edit manual</div></li>
+          <li><div class="dot">✓</div><div>Output bisa <strong>HTML, PDF, Word</strong> — pilih sesuai kebutuhan</div></li>
+          <li><div class="dot">✓</div><div>TOC, nomor halaman, referensi — semua otomatis</div></li>
+          <li><div class="dot">✓</div><div>Cocok untuk <em>laporan rutin</em>, <em>analisis eksploratori</em>, <em>skripsi</em></div></li>
+        </ul>
+      </div>
+      <div class="stk">
+        <div class="card"><div class="cl">Format Output</div><div class="cb"><span class="bdg">html</span><span class="bdg">pdf</span><span class="bdg">docx</span><span class="bdg">odt</span><span class="bdg">epub</span><span class="bdg">typst</span></div></div>
+        <div class="card"><div class="cl">Use Case Nyata</div><div class="cb">Laporan bulanan penjualan &bull; Hasil survey &bull; Analisis eksperimen &bull; Skripsi / Tesis &bull; Dokumen teknis tim</div></div>
+        <div class="co grn"><em style="color:var(--grn)">Reproducible</em> = siapapun bisa menjalankan ulang dan mendapat <strong>hasil yang persis sama</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · DOCUMENT: KODE -->
+  <section class="slide">
+    <div class="h1">Quarto Document — <em>Contoh Kode</em></div>
+    <div class="cob" style="flex:1;"><div class="cobl">laporan.qmd</div><span class="ct">---</span>
+<span class="ck">title</span>: <span class="cs">"Laporan Analisis Penjualan Bulanan"</span>
+<span class="ck">author</span>: <span class="cs">"Ikang Fadhli"</span>
+<span class="ck">date</span>: <span class="cs">"today"</span>
+<span class="ck">format</span>:
+  <span class="ck">html</span>:
+    <span class="ck">toc</span>: <span class="cn">true</span>
+    <span class="ck">theme</span>: <span class="cs">cosmo</span>
+    <span class="ck">code-fold</span>: <span class="cn">true</span>
+    <span class="ck">embed-resources</span>: <span class="cn">true</span>
+<span class="ct">---</span>
+
+<span class="cc">## Pendahuluan</span>
+
+Laporan ini dibuat otomatis dari data per tanggal <span class="cs">`r Sys.Date()`</span>.
+
+<span class="ct">```{r}</span>
+<span class="cc">#| label: fig-tren</span>
+<span class="cc">#| fig-cap: "Tren Penjualan Bulanan"</span>
+<span class="cc">#| echo: false</span>
+<span class="cf">library</span>(tidyverse)
+df <span class="ck">&lt;-</span> <span class="cf">read_csv</span>(<span class="cs">"data/penjualan.csv"</span>)
+df |&gt; <span class="cf">ggplot</span>(<span class="cf">aes</span>(x = bulan, y = nilai)) +
+  <span class="cf">geom_line</span>(color = <span class="cs">"#4db6ff"</span>, linewidth = <span class="cn">1.5</span>) +
+  <span class="cf">theme_minimal</span>()
+<span class="ct">```</span></div>
+    <div class="slide-note">Render dengan: <code>quarto render laporan.qmd</code> atau klik tombol <strong>Render</strong> di RStudio</div>
+  </section>
+
+  <!-- 12 · SEC: PRESENTATION -->
+  <section class="slide s-sec" data-n="02">
+    <div class="sec-ey">Quarto · 02</div>
+    <div class="sec-ti">Presentation</div>
+    <div class="sec-ds">Slide deck modern langsung dari kode R</div>
+  </section>
+
+  <!-- 13 · PRESENTATION: APA ITU -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Presentation</em> — Apa itu?</div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Presentasi berbasis <strong>RevealJS</strong> yang dibuat dari file <code>.qmd</code> — heading Markdown secara otomatis menjadi slide baru</div>
+        <ul class="cl-list">
+          <li><div class="dot">→</div><div>Heading <code>##</code> = slide baru secara otomatis</div></li>
+          <li><div class="dot">→</div><div>Kode R/Python dijalankan dan <strong>outputnya muncul di slide</strong></div></li>
+          <li><div class="dot">→</div><div>Speaker notes, sub-slides, animasi incremental built-in</div></li>
+          <li><div class="dot">→</div><div>Pengganti modern untuk <em>xaringan</em></div></li>
+        </ul>
+      </div>
+      <div class="stk">
+        <div class="card"><div class="cl">Format Output</div><div class="cb"><span class="bdg">revealjs</span> HTML interaktif<br><span class="bdg">beamer</span> PDF via LaTeX<br><span class="bdg">pptx</span> PowerPoint</div></div>
+        <div class="card"><div class="cl">Fitur RevealJS</div><div class="cb">Sub-slides vertikal &bull; Speaker mode &bull; Fullscreen &bull; Search &bull; Multiplex &bull; Export ke PDF</div></div>
+        <div class="co gold">💡 Presentasi ini sendiri dibuat menggunakan konsep yang sama dengan Quarto Presentation!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · PRESENTATION: KODE -->
+  <section class="slide">
+    <div class="h1">Quarto Presentation — <em>Contoh Kode</em></div>
+    <div class="cob" style="flex:1;"><div class="cobl">presentasi.qmd</div><span class="ct">---</span>
+<span class="ck">title</span>: <span class="cs">"Analisis Data dengan R"</span>
+<span class="ck">author</span>: <span class="cs">"Ikang Fadhli"</span>
+<span class="ck">format</span>:
+  <span class="ck">revealjs</span>:
+    <span class="ck">theme</span>: <span class="cs">dark</span>
+    <span class="ck">slide-number</span>: <span class="cn">true</span>
+    <span class="ck">transition</span>: <span class="cs">slide</span>
+    <span class="ck">incremental</span>: <span class="cn">true</span>      <span class="cc"># bullet muncul satu per satu</span>
+    <span class="ck">code-line-numbers</span>: <span class="cn">true</span>
+<span class="ct">---</span>
+
+<span class="cc">## Slide Pertama</span>
+
+- Poin pertama
+- Poin kedua (muncul setelah klik)
+
+<span class="cc">## Slide dengan Visualisasi</span>
+
+<span class="ct">```{r}</span>
+<span class="cf">plot</span>(mtcars$mpg, mtcars$hp, col = <span class="cs">"#4db6ff"</span>, pch = <span class="cn">19</span>)
+<span class="ct">```</span>
+
+<span class="cc">## Slide dengan Speaker Notes</span>
+
+Konten yang dilihat audiens.
+
+<span class="ct">::: {.notes}</span>
+Catatan presenter — tekan <span class="cs">S</span> untuk speaker view.
+<span class="ct">:::</span></div>
+  </section>
+
+  <!-- 15 · SEC: DASHBOARD -->
+  <section class="slide s-sec" data-n="03">
+    <div class="sec-ey">Quarto · 03</div>
+    <div class="sec-ti">Dashboard</div>
+    <div class="sec-ds">Visualisasi interaktif tanpa ngoding UI dari nol</div>
+  </section>
+
+  <!-- 16 · DASHBOARD: APA ITU -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Dashboard</em> — Apa itu?</div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Buat <strong>dashboard interaktif</strong> menggunakan layout berbasis baris dan kolom — tanpa perlu belajar Shiny UI dari awal</div>
+        <ul class="cl-list">
+          <li><div class="dot">✓</div><div>Layout grid otomatis: <code>rows</code>, <code>columns</code>, <code>tabset</code></div></li>
+          <li><div class="dot">✓</div><div>Mode <strong>statik</strong>: plotly, DT, leaflet — deploy sebagai HTML biasa</div></li>
+          <li><div class="dot">✓</div><div>Mode <strong>Shiny</strong>: input/output reaktif penuh — butuh Shiny server</div></li>
+          <li><div class="dot">✓</div><div>Value box, gauge, card — komponen siap pakai</div></li>
+        </ul>
+      </div>
+      <div class="stk">
+        <div class="card"><div class="cl">Pengganti dari...</div><div class="cb">Quarto Dashboard = versi modern dari <strong>flexdashboard</strong> di R Markdown, dengan fitur yang jauh lebih lengkap</div></div>
+        <div class="card"><div class="cl">Mode Statik</div><div class="cb">Tidak butuh reaktivitas real-time — cukup filter dengan plotly atau crosstalk. Deploy gratis di GitHub Pages!</div></div>
+        <div class="card"><div class="cl">Mode Shiny</div><div class="cb">Input user mempengaruhi komputasi R di server secara real-time — butuh Shiny Server atau shinyapps.io</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 · DASHBOARD: KODE -->
+  <section class="slide">
+    <div class="h1">Quarto Dashboard — <em>Contoh Kode</em></div>
+    <div class="cob" style="flex:1;"><div class="cobl">dashboard.qmd</div><span class="ct">---</span>
+<span class="ck">title</span>: <span class="cs">"Dashboard Penjualan 2024"</span>
+<span class="ck">format</span>: <span class="cs">dashboard</span>
+<span class="cc"># server: shiny  ← aktifkan jika pakai Shiny</span>
+<span class="ct">---</span>
+
+<span class="cc">## Row {height=35%}</span>
+
+<span class="ct">```{r}</span>
+<span class="cc">#| content: valuebox</span>
+<span class="cc">#| title: "Total Penjualan"</span>
+<span class="cf">list</span>(icon = <span class="cs">"bag-check"</span>, color = <span class="cs">"primary"</span>,
+     value = <span class="cs">"Rp 1.500.000"</span>)
+<span class="ct">```</span>
+
+<span class="cc">## Row {height=65%}</span>
+
+<span class="cc">### Column {width=60%}</span>
+
+<span class="ct">```{r}</span>
+<span class="cf">library</span>(plotly)
+<span class="cf">plot_ly</span>(df, x = ~bulan, y = ~penjualan, type = <span class="cs">"bar"</span>)
+<span class="ct">```</span>
+
+<span class="cc">### Column {width=40%}</span>
+
+<span class="ct">```{r}</span>
+<span class="cf">library</span>(DT)
+<span class="cf">datatable</span>(df, options = <span class="cf">list</span>(pageLength = <span class="cn">8</span>))
+<span class="ct">```</span></div>
+  </section>
+
+  <!-- 18 · SEC: WEBSITE -->
+  <section class="slide s-sec" data-n="04">
+    <div class="sec-ey">Quarto · 04</div>
+    <div class="sec-ti">Website</div>
+    <div class="sec-ds">Multi-halaman, deploy ke GitHub Pages dalam hitungan menit</div>
+  </section>
+
+  <!-- 19 · WEBSITE -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Website</em></div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Buat website multi-halaman dari kumpulan file <code>.qmd</code> — navigasi, sidebar, dan search <strong>otomatis terbentuk</strong> dari konfigurasi YAML</div>
+        <div class="ftree"><span class="fd">📁 my-website/</span>
+   ├── <span class="fs">_quarto.yml</span>     <span style="color:var(--rim)"># konfigurasi utama</span>
+   ├── <span class="fd">index.qmd</span>       <span style="color:var(--rim)"># halaman home</span>
+   ├── <span class="fd">about.qmd</span>
+   ├── <span class="fd">analisis.qmd</span>
+   └── styles.css</div>
+        <div class="co grn">Deploy gratis: <code>quarto publish gh-pages</code> → langsung live di GitHub Pages!</div>
+      </div>
+      <div class="cob"><div class="cobl">_quarto.yml</div><span class="ck">project</span>:
+  <span class="ck">type</span>: <span class="cs">website</span>
+
+<span class="ck">website</span>:
+  <span class="ck">title</span>: <span class="cs">"Website Saya"</span>
+  <span class="ck">navbar</span>:
+    <span class="ck">left</span>:
+      - <span class="ck">href</span>: <span class="cs">index.qmd</span>
+        <span class="ck">text</span>: <span class="cs">Home</span>
+      - <span class="ck">href</span>: <span class="cs">about.qmd</span>
+        <span class="ck">text</span>: <span class="cs">About</span>
+      - <span class="ck">href</span>: <span class="cs">analisis.qmd</span>
+        <span class="ck">text</span>: <span class="cs">Analisis</span>
+  <span class="ck">search</span>: <span class="cn">true</span>
+
+<span class="ck">format</span>:
+  <span class="ck">html</span>:
+    <span class="ck">theme</span>: <span class="cs">cosmo</span>
+    <span class="ck">toc</span>: <span class="cn">true</span></div>
+    </div>
+  </section>
+
+  <!-- 20 · SEC: BLOG -->
+  <section class="slide s-sec" data-n="05">
+    <div class="sec-ey">Quarto · 05</div>
+    <div class="sec-ti">Blog</div>
+    <div class="sec-ds">Tulis, analisis, publikasikan — semuanya dari RStudio</div>
+  </section>
+
+  <!-- 21 · BLOG -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Blog</em></div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Blog dengan <strong>listing halaman otomatis</strong>, RSS feed, kategori, dan tags — semua dari file <code>.qmd</code></div>
+        <div class="ftree"><span class="fd">📁 my-blog/</span>
+   ├── <span class="fs">_quarto.yml</span>
+   ├── <span class="fd">index.qmd</span>       <span style="color:var(--rim)"># listing post</span>
+   └── <span class="fd">posts/</span>
+       ├── <span class="fd">analisis-april/</span>
+       │   └── index.qmd
+       └── <span class="fd">tutorial-ggplot/</span>
+           ├── index.qmd
+           └── thumbnail.png</div>
+        <div class="co gold">💡 Blog post = cara terbaik mendokumentasikan analisis data + berbagi ilmu ke komunitas — persis seperti <a href="https://ikanx101.com" style="color:var(--sun)">ikanx101.com</a>!</div>
+      </div>
+      <div class="cob"><div class="cobl">posts/tutorial/index.qmd</div><span class="ct">---</span>
+<span class="ck">title</span>: <span class="cs">"Visualisasi Data dengan ggplot2"</span>
+<span class="ck">author</span>: <span class="cs">"Ikang Fadhli"</span>
+<span class="ck">date</span>: <span class="cs">"2024-06-01"</span>
+<span class="ck">categories</span>: [<span class="cs">R</span>, <span class="cs">ggplot2</span>, <span class="cs">visualisasi</span>]
+<span class="ck">image</span>: <span class="cs">"thumbnail.png"</span>
+<span class="ck">description</span>: <span class="cs">"Panduan membuat chart yang informatif"</span>
+<span class="ct">---</span>
+
+Isi artikel di sini — kode R berjalan
+langsung, output otomatis muncul di
+halaman blog!
+
+<span class="ct">```{r}</span>
+<span class="cf">library</span>(ggplot2)
+<span class="cf">ggplot</span>(mtcars, <span class="cf">aes</span>(mpg, hp)) +
+  <span class="cf">geom_point</span>(color = <span class="cs">"#4db6ff"</span>) +
+  <span class="cf">theme_minimal</span>()
+<span class="ct">```</span></div>
+    </div>
+  </section>
+
+  <!-- 22 · SEC: BOOK -->
+  <section class="slide s-sec" data-n="06">
+    <div class="sec-ey">Quarto · 06</div>
+    <div class="sec-ti">Book</div>
+    <div class="sec-ds">Buku digital multi-bab dengan referensi silang otomatis</div>
+  </section>
+
+  <!-- 23 · BOOK -->
+  <section class="slide">
+    <div class="h1">Quarto <em>Book</em></div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Tulis buku multi-bab yang bisa di-render menjadi <strong>website, PDF, dan EPUB</strong> dari <strong>satu project yang sama</strong></div>
+        <ul class="cl-list">
+          <li><div class="dot">📖</div><div>Cross-reference antar bab, gambar, dan tabel otomatis</div></li>
+          <li><div class="dot">🔍</div><div>Search built-in pada versi web</div></li>
+          <li><div class="dot">📥</div><div>Download button untuk PDF &amp; EPUB tersedia otomatis</div></li>
+          <li><div class="dot">🌐</div><div>Deploy ke GitHub Pages atau Quarto Pub — gratis</div></li>
+        </ul>
+        <div class="co gold">💡 Contoh nyata: buku <em>R for Data Science 2nd Ed</em> (Hadley Wickham) dibuat dengan Quarto!</div>
+      </div>
+      <div class="cob"><div class="cobl">_quarto.yml (book)</div><span class="ck">project</span>:
+  <span class="ck">type</span>: <span class="cs">book</span>
+
+<span class="ck">book</span>:
+  <span class="ck">title</span>: <span class="cs">"Belajar R dari Nol"</span>
+  <span class="ck">author</span>: <span class="cs">"Ikang Fadhli"</span>
+  <span class="ck">date</span>: <span class="cs">"2024"</span>
+  <span class="ck">chapters</span>:
+    - <span class="cs">index.qmd</span>             <span class="cc"># Preface</span>
+    - <span class="cs">bab01-intro.qmd</span>
+    - <span class="cs">bab02-dataframe.qmd</span>
+    - <span class="cs">bab03-visualisasi.qmd</span>
+    - <span class="cs">bab04-model.qmd</span>
+    - <span class="cs">references.qmd</span>
+
+<span class="ck">format</span>:
+  <span class="ck">html</span>:
+    <span class="ck">theme</span>: <span class="cs">cosmo</span>
+  <span class="ck">pdf</span>:
+    <span class="ck">documentclass</span>: <span class="cs">scrreprt</span>
+  <span class="ck">epub</span>: <span class="ck">default</span></div>
+    </div>
+  </section>
+
+  <!-- 24 · SEC: TIPS -->
+  <section class="slide s-sec" data-n="★">
+    <div class="sec-ey">Pro Tips</div>
+    <div class="sec-ti">Tips &amp; Tricks</div>
+    <div class="sec-ds">Fitur-fitur yang wajib kamu tahu</div>
+  </section>
+
+  <!-- 25 · CROSS-REF -->
+  <section class="slide">
+    <div class="h1"><em>Cross-referencing</em> Otomatis</div>
+    <div class="two">
+      <div class="stk">
+        <div class="co">Quarto membuat <strong>nomor referensi otomatis</strong> untuk gambar, tabel, dan section — bisa dikutip di mana saja dalam dokumen</div>
+        <ul class="cl-list">
+          <li><div class="dot">🖼️</div><div>Gambar: <code>@fig-nama</code> → "Gambar 1"</div></li>
+          <li><div class="dot">📋</div><div>Tabel: <code>@tbl-nama</code> → "Tabel 2"</div></li>
+          <li><div class="dot">🔢</div><div>Persamaan: <code>@eq-nama</code> → "Persamaan 3"</div></li>
+          <li><div class="dot">📑</div><div>Section: <code>@sec-nama</code> → "Bagian 1.2"</div></li>
+        </ul>
+      </div>
+      <div class="cob"><div class="cobl">contoh cross-ref</div><span class="ct">```{r}</span>
+<span class="cc">#| label: fig-distribusi</span>
+<span class="cc">#| fig-cap: "Distribusi skor nilai"</span>
+<span class="cf">hist</span>(<span class="cf">rnorm</span>(<span class="cn">1000</span>), col = <span class="cs">"#4db6ff"</span>,
+     main = <span class="cs">"Distribusi Normal"</span>)
+<span class="ct">```</span>
+
+Lihat @fig-distribusi untuk hasil
+distribusi nilai yang dibangkitkan.
+
+<span class="ct">```{r}</span>
+<span class="cc">#| label: tbl-ringkasan</span>
+<span class="cc">#| tbl-cap: "Ringkasan statistik"</span>
+<span class="cf">knitr</span>::<span class="cf">kable</span>(<span class="cf">summary</span>(mtcars[,<span class="cn">1</span>:<span class="cn">3</span>]))
+<span class="ct">```</span>
+
+Tabel @tbl-ringkasan menunjukkan
+statistik deskriptif dataset mtcars.</div>
+    </div>
+  </section>
+
+  <!-- 26 · PARAMETERIZED -->
+  <section class="slide">
+    <div class="h1"><em>Parameterized</em> Report</div>
+    <div class="two">
+      <div class="stk">
+        <div class="co gold"><strong>Satu template</strong> <code>.qmd</code> bisa dirender berkali-kali dengan nilai berbeda — laporan per-region, per-produk, atau per-periode secara otomatis!</div>
+        <ul class="cl-list">
+          <li><div class="dot">1</div><div>Definisikan <code>params</code> di YAML header</div></li>
+          <li><div class="dot">2</div><div>Gunakan <code>params$nama</code> di dalam kode R</div></li>
+          <li><div class="dot">3</div><div>Render batch lewat script R dengan <code>purrr::walk</code></div></li>
+        </ul>
+        <div class="co grn">💡 Output otomatis: laporan-Jakarta.html, laporan-Surabaya.html, laporan-Bandung.html — sekaligus!</div>
+      </div>
+      <div class="cob"><div class="cobl">laporan-param.qmd + render.R</div><span class="ct">---</span>
+<span class="ck">title</span>: <span class="cs">"Laporan `r params$region`"</span>
+<span class="ck">params</span>:
+  <span class="ck">region</span>: <span class="cs">"Jakarta"</span>    <span class="cc"># nilai default</span>
+  <span class="ck">tahun</span>:  <span class="cn">2024</span>
+<span class="ct">---</span>
+
+<span class="ct">```{r}</span>
+df_filtered <span class="ck">&lt;-</span> data |&gt;
+  <span class="cf">filter</span>(region == params$region,
+         tahun  == params$tahun)
+<span class="ct">```</span>
+
+<span class="cc">--- render.R ---</span>
+
+regions <span class="ck">&lt;-</span> <span class="cf">c</span>(<span class="cs">"Jakarta"</span>, <span class="cs">"Surabaya"</span>, <span class="cs">"Bandung"</span>)
+
+purrr::<span class="cf">walk</span>(regions, \(r)
+  quarto::<span class="cf">quarto_render</span>(
+    <span class="cs">"laporan-param.qmd"</span>,
+    output_file    = <span class="cf">paste0</span>(<span class="cs">"laporan-"</span>, r, <span class="cs">".html"</span>),
+    execute_params = <span class="cf">list</span>(region = r)
+  )
+)</div>
+    </div>
+  </section>
+
+  <!-- 27 · PERBANDINGAN -->
+  <section class="slide">
+    <div class="h1">Perbandingan: <em>Rmd vs xaringan vs Quarto</em></div>
+    <div style="overflow-x:auto;flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <table class="ctbl">
+        <thead>
+          <tr><th>Fitur</th><th>R Markdown</th><th>xaringan</th><th>Quarto</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Multi-bahasa (R, Python, Julia)</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Dokumen (HTML / PDF / Word)</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Presentasi modern</td><td class="pt">~</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Dashboard</td><td class="pt">~ flexdashboard</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Website &amp; Blog &amp; Book</td><td class="pt">~ blogdown / bookdown</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>CLI mandiri (tanpa R)</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Parameterized report</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Cross-referencing built-in</td><td class="pt">~ bookdown syntax</td><td class="no">✗</td><td class="yes">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 28 · PENUTUP -->
+  <section class="slide" style="align-items:center;justify-content:center;text-align:center;">
+    <div style="font-size:.72rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--sky);margin-bottom:14px;">Terima Kasih!</div>
+    <div style="font-size:2.35rem;font-weight:900;color:var(--mist);margin-bottom:6px;text-wrap:balance;">Selamat bereksperimen<br>dengan <em style="color:var(--sky)">Quarto!</em></div>
+    <div style="font-size:.97rem;font-weight:600;color:var(--fog);margin-bottom:28px;">Semua yang tadi kita bahas bisa dimulai hari ini — gratis.</div>
+    <div class="cls-grid">
+      <div class="cls-card"><span class="ico">📚</span><div class="lbl">Dokumentasi</div><div class="url">quarto.org/docs</div></div>
+      <div class="cls-card"><span class="ico">⭐</span><div class="lbl">Awesome Quarto</div><div class="url">github.com/mcanouil/<br>awesome-quarto</div></div>
+      <div class="cls-card"><span class="ico">✍️</span><div class="lbl">Blog Saya</div><div class="url">ikanx101.com</div></div>
+    </div>
+    <div class="co" style="max-width:600px;text-align:left;margin-top:4px;">
+      <strong>Ingat:</strong> Reproducible reporting bukan sekadar soal tools — ini tentang kebiasaan <em>mendokumentasikan pekerjaan kita dengan baik</em> sehingga bisa diulang, diverifikasi, dan dibangun bersama.
+    </div>
+    <div style="margin-top:16px;font-size:.8rem;font-weight:700;color:var(--fog);">Ikang Fadhli &bull; Market Researcher &amp; Blogger &bull; <a href="https://ikanx101.com" style="color:var(--sky);text-decoration:none;">ikanx101.com</a></div>
+  </section>
+
+  <!-- Nav pill -->
+  <div id="nav">
+    <button class="nb" id="bp" onclick="go(-1)" title="Sebelumnya (←)">&#8592;</button>
+    <span id="ctr">1 / 29</span>
+    <button class="nb" id="bn" onclick="go(1)" title="Berikutnya (→)">&#8594;</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let cur = 0;
+
+  function render(){
+    slides.forEach((s,i) => s.classList.toggle('on', i===cur));
+    document.getElementById('ctr').textContent = (cur+1)+' / '+total;
+    document.getElementById('prog-fill').style.width = ((cur+1)/total*100).toFixed(1)+'%';
+    document.getElementById('bp').disabled = cur===0;
+    document.getElementById('bn').disabled = cur===total-1;
+  }
+
+  window.go = function(d){
+    const n = cur+d;
+    if(n<0||n>=total) return;
+    cur=n; render();
+  };
+
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(1);}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(-1);}
+  });
+
+  let tx=0;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>50) go(dx<0?1:-1);
+  },{passive:true});
+
+  render();
+})();
+</script>
