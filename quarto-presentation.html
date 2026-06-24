@@ -75,7 +75,7 @@ html, body {
 /* ── SLIDES ─────────────────────────── */
 .slide {
   position: absolute; inset: 0;
-  padding: 50px 58px 58px;
+  padding: 50px 58px 84px;
   display: flex; flex-direction: column;
   background: var(--navy);
   opacity: 0; pointer-events: none;
@@ -332,6 +332,65 @@ code {
   margin-top: auto; flex-shrink: 0;
   font-size: .7rem; font-weight: 700;
   color: rgba(123,165,204,.45); padding-top: 10px;
+}
+
+/* ── iPad 9th gen & tablet landscape (≤820px tinggi) ─────── */
+@media screen and (max-height: 820px) {
+  html, body { font-size: 100%; }
+
+  .slide { padding: 34px 44px 82px; }
+
+  /* Cover */
+  .c-badge { top: 28px; right: 44px; }
+  .c-title { font-size: 2.3rem; margin-bottom: 18px; }
+  .c-name  { font-size: 1rem; }
+  .c-role  { font-size: .8rem; }
+  .eyebrow { margin-bottom: 10px; }
+
+  /* Question */
+  .q-ico { font-size: 2.6rem; margin-bottom: 16px; }
+  .q-txt { font-size: 1.75rem; }
+
+  /* Section break */
+  .sec-ti { font-size: 2.6rem; }
+  .sec-ds { font-size: .9rem; margin-top: 9px; }
+  .sec-ey { margin-bottom: 9px; }
+
+  /* Heading */
+  .h1 { font-size: 1.48rem; margin-bottom: 16px; padding-bottom: 10px; }
+
+  /* Layout gaps */
+  .two  { gap: 15px; }
+  .stk  { gap: 9px; }
+  .tl   { gap: 9px; }
+  .three { gap: 11px; }
+
+  /* Cards & callouts */
+  .card { padding: 10px 13px; }
+  .cb   { font-size: .82rem; line-height: 1.5; }
+  .co   { padding: 9px 12px; font-size: .86rem; }
+
+  /* Checklist */
+  .cl-list    { gap: 7px; }
+  .cl-list li { font-size: .86rem; }
+
+  /* Code block */
+  .cob { font-size: .72rem; line-height: 1.6; padding: 11px 14px; }
+
+  /* Timeline */
+  .tt { font-size: .84rem; }
+
+  /* Closing */
+  .cls-grid { gap: 11px; margin: 10px 0; }
+  .cls-card { padding: 11px; }
+  .cls-card .ico { font-size: 1.2rem; margin-bottom: 4px; }
+  .cls-card .url { font-size: .72rem; }
+
+  /* Slide note */
+  .slide-note { font-size: .63rem; padding-top: 7px; }
+
+  /* Nav */
+  #nav { bottom: 12px; }
 }
 </style>
 </head>
