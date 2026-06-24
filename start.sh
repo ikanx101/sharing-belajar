@@ -7,9 +7,7 @@ server {
     server_name _;
     root /usr/share/nginx/html;
 
-    location = / {
-        return 301 /quarto-presentation.html;
-    }
+    index quarto-presentation.html;
 
     location / {
         try_files \$uri \$uri/ =404;
